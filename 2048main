@@ -1,0 +1,273 @@
+# Setup Python ----------------------------------------------- #
+import pygame
+import sys
+import os
+import random
+import time
+
+
+
+# Setup pygame/window ---------------------------------------- #
+pygame.init()
+pygame.display.set_caption('2048') # title of the game
+
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 400
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT),0,32)
+
+mainClock = pygame.time.Clock()
+
+
+# Fonts ------------------------------------------------------- #
+main_font = pygame.font.SysFont("coopbl", 22)
+medium_font = pygame.font.SysFont("coopbl", 42)
+big_font = pygame.font.SysFont("coopbl", 50)
+
+
+# Classes --------------------------------------------------------- #
+class Board:
+    def __init__(self):
+        self.size = SCREEN_WIDTH #size of the board
+        self.color = (187,173,160) #color of t he board
+        self.text_color = (119,110,101) # color of the number text
+
+        self.nb_tiles = 4 # number of tiles for on one line
+        self.tile_size = self.size // self.nb_tiles
+        self.tile_gap = 5 # how smaller will be the rect
+        # the color for all te numbrers, "more" is the color if the number are bigger than 4096
+            # official 2048 game colors
+        # self.tiles_colors = {0:(204,192,179), 2:(238,228,218), 4:(237,223,196), 8:(244,177,122), 16:(247,150,99),
+        #                     32:(246,125,98), 64:(246,94,57), 128:(237,206,118), 256:(237,202,100),
+        #                     512:(237,200,80), 1024:(237,199,68), 2048:(237,194,46), 4096:(254,61,62),
+        #                     "more":(255,32,33)}
+            # custom colors
+        self.tiles_colors = {0:(204,192,179), 
+                             2:(198, 215, 247), 
+                             4:(174, 198, 245), 
+                             8:(144, 176, 240), 
+                             16:(111, 129, 227),
+                             32:(112, 93, 232), 
+                             64:(147, 100, 250), 
+                             128:(182, 100, 250), 
+                             256:(247, 100, 250),
+                             512:(240, 117, 195), 
+                             1024:(255, 186, 117), 
+                             2048:(245, 201, 98), 
+                             4096:(255, 192, 46),
+                             "more":(255, 212, 23)
+                             }
+
+        self.reset()
+
+
+    def reset(self): # reset the board
+        self.loose = False
+        self.tile_matrix =[[0 for i in range(self.nb_tiles)] for i in range(self.nb_tiles)]
+        for i in range(2): # make spawn 2 tile
+            self.spawn_new_tile()
+        self.redraw_board()
+
+#The restart mode only works when self.loose = False
+    def make_restart(self): # write the text to restart the game and make restart if the user press Space
+        text = "Press Space to restart"
+        start_label = big_font.render(text, 1, self.text_color)
+        SCREEN.blit(start_label, (SCREEN_WIDTH//2-start_label.get_width()//2, SCREEN_HEIGHT//2-start_label.get_height()//2))
+
+        if pygame.key.get_pressed()[pygame.K_SPACE]: #make restart the game if the user press on enter
+            self.reset()
+
+
+    def loose_check(self): # check if the user has lose
+        self.loose = True
+        for line in self.tile_matrix:
+            if 0 in line:
+                self.loose = False
+                break
+
+
+    def move_tiles_right(self): # make move the tiles to the right
+        something_move = False
+        for line in self.tile_matrix:
+            for pos, tile in enumerate(line[::-1]):
+                pos = len(line)-pos-1
+                if tile != 0:
+                    for i in range(0,self.nb_tiles-1):
+                        if pos+i+1 < self.nb_tiles:
+                            if line[pos+i+1] == 0:
+                                line[pos+i], line[pos+i+1] = 0, line[pos+i]
+                                something_move = True
+                            elif line[pos+i+1] == line[pos+i]:
+                                line[pos+i], line[pos+i+1] = 0, line[pos+i] * 2
+                                something_move = True
+
+                            else:
+                                break
+        return something_move
+
+
+    def move_tiles_left(self): # make move the tiles to the left
+        something_move = False
+        for line in self.tile_matrix:
+            for pos, tile in enumerate(line):
+                if tile != 0:
+                    for i in range(0, self.nb_tiles-1):
+                        if pos-i > 0:
+                            if line[pos-i-1] == 0:
+                                line[pos-i], line[pos-i-1] = 0, line[pos-i]
+                                something_move = True
+                            elif line[pos-i-1] == line[pos-i]:
+                                line[pos-i], line[pos-i-1] = 0, line[pos-i] * 2
+                                something_move = True
+
+                            else:
+                                break
+        return something_move
+
+
+    def move_tiles_down(self): # make move the tiles down
+        something_move = False
+        for y in range(len(self.tile_matrix)):
+            y = self.nb_tiles-y-1
+            line = self.tile_matrix[y]
+
+            for x, tile in enumerate(line):
+
+                if tile != 0:
+                    for i in range(0,self.nb_tiles):
+                        if y+i < self.nb_tiles-1:
+                            if self.tile_matrix[y+i+1][x] == 0:
+                                self.tile_matrix[y+i][x], self.tile_matrix[y+i+1][x] = 0, self.tile_matrix[y+i][x]
+                                something_move = True
+                            elif self.tile_matrix[y+i+1][x] == self.tile_matrix[y+i][x]:
+                                self.tile_matrix[y+i][x], self.tile_matrix[y+i+1][x] = 0, self.tile_matrix[y+i][x] * 2
+                                something_move = True
+
+                            else:
+                                break
+        return something_move
+
+
+    def move_tiles_up(self): # make move the tiles up
+        something_move = False
+        for y, line in enumerate(self.tile_matrix):
+            for x, tile in enumerate(line):
+                if tile != 0:
+                    for i in range(0,self.nb_tiles-1):
+
+                        if y > 0:
+                            if self.tile_matrix[y-i-1][x] == 0:
+                                self.tile_matrix[y-i][x], self.tile_matrix[y-i-1][x] = 0, self.tile_matrix[y-i][x]
+                                something_move = True
+                            elif self.tile_matrix[y-i-1][x] == self.tile_matrix[y-i][x]:
+                                self.tile_matrix[y-i][x], self.tile_matrix[y-i-1][x] = 0, self.tile_matrix[y-i][x] * 2
+                                something_move = True
+
+                            else:
+                                break
+        return something_move
+
+
+    def spawn_new_tile(self): # make spawn a new tile randomly on the board
+        x = 0; y = 0
+        # define where a tile can spawn
+        possible_spawn_pos = []
+        for y, line in enumerate(self.tile_matrix):
+            for x, tile in enumerate(line):
+                if tile == 0:
+                    possible_spawn_pos.append((x,y))
+        # define if it will be a 2 or a 4
+        if random.randint(1,10) == 1:
+            tile_nb = 4
+        else:
+            tile_nb = 2
+        # add a tile at a random pos
+        spawn_pos = random.choice(possible_spawn_pos)
+        self.tile_matrix[spawn_pos[1]][spawn_pos[0]] = tile_nb
+
+
+    def redraw_board(self): # draw the board and write the numbers on the tiles
+        self.surface = pygame.Surface((self.size, self.size))
+        self.surface.fill(self.color)
+
+        for y, line in enumerate(self.tile_matrix):
+            for x, tile in enumerate(line):
+
+                if tile in self.tiles_colors.keys(): # if the tile number has a color
+                    color = self.tiles_colors[tile]
+                else:
+                    color = self.tiles_colors["more"]
+                # draw the square
+                pygame.draw.rect(self.surface, color, (x*self.tile_size+self.tile_gap, y*self.tile_size+self.tile_gap, self.tile_size-self.tile_gap*2, self.tile_size-self.tile_gap*2))
+                # draw the number
+                if tile > 0:
+                    number_label = medium_font.render(str(tile), 1, self.text_color)
+                    self.surface.blit(number_label, (x*self.tile_size + self.tile_size//2 - number_label.get_width()//2 ,y*self.tile_size + self.tile_size//2 - number_label.get_height()//2))
+
+
+# Creation --------------------------------------------------------#
+board = Board()
+
+# Functions ------------------------------------------------------- #
+def redraw(): # draw the game on the screen
+    SCREEN.blit(board.surface, (0, SCREEN_HEIGHT-board.surface.get_height()))
+
+    if board.loose:
+        board.make_restart()
+
+
+def buttons(): # chekc for user inputs
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+
+            if event.key == pygame.K_LEFT:
+                if not board.loose and board.move_tiles_left():
+                    board.spawn_new_tile()
+                    board.redraw_board()
+                else:
+                    board.loose_check()
+
+            if event.key == pygame.K_RIGHT:
+                if not board.loose and board.move_tiles_right():
+                    board.spawn_new_tile()
+                    board.redraw_board()
+                else:
+                    board.loose_check()
+
+            if event.key == pygame.K_DOWN:
+                if not board.loose and board.move_tiles_down():
+                    board.spawn_new_tile()
+                    board.redraw_board()
+                else:
+                    board.loose_check()
+
+            if event.key == pygame.K_UP:
+                if not board.loose and board.move_tiles_up():
+                    board.spawn_new_tile()
+                    board.redraw_board()
+                else:
+                    board.loose_check()
+
+
+def update():
+    pygame.display.update()
+    mainClock.tick(60) #make the game run at 60 frames / sec
+
+
+
+# Loop ------------------------------------------------------- #
+while True:
+    # draw --------------------------------------------- #
+    redraw()
+
+    # Buttons ------------------------------------------------ #
+    buttons()
+
+    # Update ------------------------------------------------- #
+    update()
