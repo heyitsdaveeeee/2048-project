@@ -212,9 +212,7 @@ def redraw(): # draw the game on the screen
 
 def buttons(): # chekc for user inputs
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+        
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -228,31 +226,35 @@ def buttons(): # chekc for user inputs
                 else:
                     board.loose_check()
 
-            if event.key == pygame.K_RIGHT:
+            elif event.key == pygame.K_RIGHT:
                 if not board.loose and board.move_tiles_right():
                     board.spawn_new_tile()
                     board.redraw_board()
                 else:
                     board.loose_check()
 
-            if event.key == pygame.K_DOWN:
+            elif event.key == pygame.K_DOWN:
                 if not board.loose and board.move_tiles_down():
                     board.spawn_new_tile()
                     board.redraw_board()
                 else:
                     board.loose_check()
 
-            if event.key == pygame.K_UP:
+            elif event.key == pygame.K_UP:
                 if not board.loose and board.move_tiles_up():
                     board.spawn_new_tile()
                     board.redraw_board()
                 else:
                     board.loose_check()
+                    
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
 
 def update():
     pygame.display.update()
-    mainClock.tick(60) #make the game run at 60 frames / sec
+    mainClock.tick(120) #make the game run at 120 frames / sec
 
 
 
