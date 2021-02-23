@@ -34,13 +34,8 @@ class Board:
         self.nb_tiles = 4 # number of tiles for on one line
         self.tile_size = self.size // self.nb_tiles
         self.tile_gap = 5 # how smaller will be the rect
-        # the color for all te numbrers, "more" is the color if the number are bigger than 4096
-            # official 2048 game colors
-        # self.tiles_colors = {0:(204,192,179), 2:(238,228,218), 4:(237,223,196), 8:(244,177,122), 16:(247,150,99),
-        #                     32:(246,125,98), 64:(246,94,57), 128:(237,206,118), 256:(237,202,100),
-        #                     512:(237,200,80), 1024:(237,199,68), 2048:(237,194,46), 4096:(254,61,62),
-        #                     "more":(255,32,33)}
-            # custom colors
+        
+        # blue lyfe
         self.tiles_colors = {0:(204,192,179), 
                              2:(198, 215, 247), 
                              4:(174, 198, 245), 
@@ -67,7 +62,7 @@ class Board:
             self.spawn_new_tile()
         self.redraw_board()
 
-#The restart mode only works when self.loose = False
+
     def make_restart(self): # write the text to restart the game and make restart if the user press Space
         text = "Press Space to restart"
         start_label = big_font.render(text, 1, self.text_color)
